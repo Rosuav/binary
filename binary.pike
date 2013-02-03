@@ -83,7 +83,7 @@ int test_validate()
 	}));
 }
 
-constant monitor=1;
+int monitor=0;
 void move(array(string) state,int val,int row,int col,string|void desc)
 {
 	if (state[row][col]!='.') error("OOPS! Can't set state where it's not currently blank");
@@ -128,10 +128,31 @@ array(int) try_solve_simple(array(string) state)
 	return ({0,0,0,0});
 }
 
+//Can't solve it the simple way. Pick one space at random, try it with a random value. Try to solve from there (the state must by definition be valid, but see what it entails - recurse).
+//If it fails validation at any time, the reverse option MUST be true.
+//Actually, random mightn't be all that useful, as we'll not know when we're done. So do it iteratively and exhaustively.
+//This is much more expensive than the above, and not the same form of logic. We assert the contrary and disprove it, rather than directly proving that this is a valid move.
+constant may_assert_contrary=1;
+int contraried=0; //Keep track of the number of times the solution required this level of logic
+array(int) try_solve_contrary(array(string) state)
+{
+	//Now THAT is a loop comprehension.
+	int oldmonitor=monitor; monitor=0;
+	if (may_assert_contrary) foreach (state;int row;string line) foreach (line;int col;int val) if (val=='.') for (int newval='0';newval<='1';++newval)
+	{
+		array(string) newstate=state+({ });
+		//newstate[row][col]=newval;
+		move(newstate,newval,row,col,"assert-contrary-test");
+		if (!try_solve(newstate)) {monitor=oldmonitor; ++contraried; return ({newval^1,row,col,"assert-contrary"});}
+	}
+	monitor=oldmonitor;
+	return ({0,0,0,0});
+}
+
 //Mutates state. Must not reassign state.
+//Returns 1 if it could solve the game, 0 if it failed validation somewhere.
 int try_solve(array(string) state)
 {
-	if (validate(state,1)) return 0; //Mucked-up state/structure, no good
 	while (1)
 	{
 		if (validate(state)) return 0;
@@ -140,9 +161,10 @@ int try_solve(array(string) state)
 		[val,row,col,desc]=try_solve_simple(flip(state));
 		if (val) {move(state,val,col,row,desc+"-col"); continue;}
 		if (search(state*"",'.')==-1) return 1; //Solved!
+		[val,row,col,desc]=try_solve_contrary(state);
+		if (val) {move(state,val,row,col,desc); continue;}
 		break; //Probably not solvable.
 	}
-	//TODO: Try one space at random, recurse.
 }
 
 int main()
@@ -163,4 +185,5 @@ int main()
 	if (validate(state,1)) write("Bad state\n");
 	try_solve(state);
 	write(" %s\n",replace(state*"\n",""," "));
+	if (contraried) write("Complex puzzle - not solvable without asserting the contrary\n");
 }
