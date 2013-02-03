@@ -112,7 +112,21 @@ array(int) try_solve_simple(array(string) state)
 			pos=search(line,".11"); if (pos!=-1) return ({other,i,pos,".xx"});
 			pos=search(line,"1.1"); if (pos!=-1) return ({other,i,pos+1,"x.x"});
 			pos=search(line,"11."); if (pos!=-1) return ({other,i,pos+2,"xx."});
-			if (sizeof(line/"1")-1 == sizeof(line)/2) return ({other,i,search(line,'.'),"parity-simple"}); //Can't have any more '1' so any remaining '.'s become a '0's
+			int cnt=sizeof(line/"1")-1;
+			if (cnt == sizeof(line)/2) return ({other,i,search(line,'.'),"parity-simple"}); //Can't have any more '1' so any remaining '.'s become a '0's
+			if (cnt == sizeof(line)/2-1) //Can't have more than one more '1'.
+			{
+				//"110110...." - only one more 1. Placing too many zeroes at the beginning of free space would violate tne sequence rule, so placing the 1 toward the end would violate that rule, so we can place 0s toward the end with certainty.
+				array(string) newstate=state+({ }); //Copy the state so we don't damage the original. This doesn't work if other has been flipped (the rest of the array hasn't been flipped), so let's de-flip that.
+				int cur=other^1;
+				string ln=newstate[i]=replace(state[i],".",(string)({other}));
+				foreach (line;int col;int val) if (val=='.')
+				{
+					newstate[i][col]=cur;
+					if (string reason=validate(newstate)) return ({other,i,col,"parity-complex-"+reason}); //If it doesn't validate with cur in it, we can with certainty place other in it!
+					newstate[i]=ln;
+				}
+			}
 
 			if (other=='1') break;
 			other='1'; line=replace(line,({"0","1"}),({"1","0"}));
