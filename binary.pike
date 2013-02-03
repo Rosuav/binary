@@ -23,13 +23,14 @@ Each cell is . for unknown, or ASCII 0 or 1.
 array(string) flip(array(string) state) {return (array(string))Array.transpose((array(array(int)))state);}
 
 //Validate a state, optionally including its structure (omit that for a quicker check when certain the structure hasn't been altered)
-int validate(array(string) state,int|void structure)
+//Returns 0 if okay, else failure reason
+string validate(array(string) state,int|void structure)
 {
 	if (structure)
 	{
 		int sz=sizeof(state);
-		if (sz&1) return 0; //Have to have an even number of rows/cols
-		foreach (state,string line) if (sizeof(line)!=sz) return 0; //Have to be square
+		if (sz&1) return "Have to have an even number of rows/cols";
+		foreach (state,string line) if (sizeof(line)!=sz) return "Have to be square";
 	}
 	int sz=sizeof(state);
 	foreach (({state,flip(state)}),array(string) state)
@@ -37,17 +38,17 @@ int validate(array(string) state,int|void structure)
 		//Validate rows, then columns.
 		foreach (state;int i;string line)
 		{
-			if (search(line,"000")!=-1 || search(line,"111")!=-1) return 0; //Sequence rule
-			if (sizeof(line/"0")-1>sz || sizeof(line/"1")-1>sz) return 0; //Parity rule
-			if (search(line,'.')==-1 && search(state,line)<i) return 0; //Uniqueness rule, applicable only to completed lines. The rule will be violated by the second line in the state, which will be found earlier than its own index.
+			if (search(line,"000")!=-1 || search(line,"111")!=-1) return "Sequence rule";
+			if (sizeof(line/"0")-1>sz || sizeof(line/"1")-1>sz) return "Parity rule";
+			if (search(line,'.')==-1 && search(state,line)<i) return "Uniqueness rule"; //Applicable only to completed lines. The rule will be violated by the second line in the state, which will be found earlier than its own index.
 		}
 	}
-	return 1;
+	return 0;
 }
 
 //Test validate() on a variety of example states
-void valid(array(string) state) {if ( validate(state,1)) write("Correctly shows as valid:\n%s\n",state*"\n"); else write("WRONGLY MARKED INVALID:\n%s\n",state*"\n");}
-void wrong(array(string) state) {if (!validate(state,1)) write("Correctly shows as invalid:\n%s\n",state*"\n"); else write("WRONGLY MARKED VALID:\n%s\n",state*"\n");}
+void valid(array(string) state) {if (!validate(state,1)) write("Correctly shows as valid:\n%s\n",state*"\n"); else write("WRONGLY MARKED INVALID:\n%s\n",state*"\n");}
+void wrong(array(string) state) {if ( validate(state,1)) write("Correctly shows as invalid:\n%s\n",state*"\n"); else write("WRONGLY MARKED VALID:\n%s\n",state*"\n");}
 int test_validate()
 {
 	valid(({"....","....","....","...."}));
@@ -118,10 +119,10 @@ array(int) try_solve_simple(array(string) state)
 //Mutates state. Must not reassign state.
 int try_solve(array(string) state)
 {
-	if (!validate(state,1)) return 0; //Mucked-up state/structure, no good
+	if (validate(state,1)) return 0; //Mucked-up state/structure, no good
 	while (1)
 	{
-		if (!validate(state)) return 0;
+		if (validate(state)) return 0;
 		[int val,int row,int col]=try_solve_simple(state);
 		if (val) {move(state,val,row,col); continue;}
 		[val,row,col]=try_solve_simple(flip(state));
@@ -147,7 +148,7 @@ int main()
 		"...11...0.",
 		"........0.",
 	});
-	if (!validate(state,1)) write("Bad state\n");
+	if (validate(state,1)) write("Bad state\n");
 	try_solve(state);
 	write(" %s\n",replace(state*"\n",""," "));
 }
