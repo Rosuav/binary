@@ -99,15 +99,18 @@ array(int) try_solve_simple(array(string) state)
 	foreach (state;int i;string line)
 	{
 		if (search(line,'.')==-1) continue; //Nothing to do!
-		int pos;
-		pos=search(line,".11"); if (pos!=-1) return ({'0',i,pos});
-		pos=search(line,".00"); if (pos!=-1) return ({'1',i,pos});
-		pos=search(line,"1.1"); if (pos!=-1) return ({'0',i,pos+1});
-		pos=search(line,"0.0"); if (pos!=-1) return ({'1',i,pos+1});
-		pos=search(line,"11."); if (pos!=-1) return ({'0',i,pos+2});
-		pos=search(line,"00."); if (pos!=-1) return ({'1',i,pos+2});
-		if (sizeof(line/"1")-1 == sizeof(line)/2) return ({'0',i,search(line,'.')});
-		if (sizeof(line/"0")-1 == sizeof(line)/2) return ({'1',i,search(line,'.')});
+		int other='0';
+		while (1)
+		{
+			int pos;
+			pos=search(line,".11"); if (pos!=-1) return ({other,i,pos});
+			pos=search(line,"1.1"); if (pos!=-1) return ({other,i,pos+1});
+			pos=search(line,"11."); if (pos!=-1) return ({other,i,pos+2});
+			if (sizeof(line/"1")-1 == sizeof(line)/2) return ({other,i,search(line,'.')});
+			if (other=='1') break;
+			other='1'; line=replace(line,({"0","1"}),({"1","0"}));
+			//And redo all these checks with 1 and 0 switched. Saves writing them out twice.
+		}
 	}
 	return ({0,0,0});
 }
