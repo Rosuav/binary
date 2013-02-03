@@ -84,11 +84,16 @@ int test_validate()
 }
 
 constant monitor=1;
-void move(array(string) state,int val,int row,int col)
+void move(array(string) state,int val,int row,int col,string|void desc)
 {
 	if (state[row][col]!='.') error("OOPS! Can't set state where it's not currently blank");
 	state[row][col]=val;
-	if (monitor) {write("\n%{%s\n%}",state); sleep(.1);}
+	if (!monitor) return;
+	//write("\n%s\n",state*"\n"); sleep(.1);
+	string s=state*"\n";
+	int pos=row*(sizeof(state)+1)+col;
+	write("\t\t\t%s\n%s\e[1m%c\e[0m%s\n",desc||"",s[..pos-1],s[pos],s[pos+1..]);
+	sleep(.1);
 }
 
 //Try simple techniques to find a solution
@@ -104,16 +109,17 @@ array(int) try_solve_simple(array(string) state)
 		while (1)
 		{
 			int pos;
-			pos=search(line,".11"); if (pos!=-1) return ({other,i,pos});
-			pos=search(line,"1.1"); if (pos!=-1) return ({other,i,pos+1});
-			pos=search(line,"11."); if (pos!=-1) return ({other,i,pos+2});
-			if (sizeof(line/"1")-1 == sizeof(line)/2) return ({other,i,search(line,'.')});
+			pos=search(line,".11"); if (pos!=-1) return ({other,i,pos,".xx"});
+			pos=search(line,"1.1"); if (pos!=-1) return ({other,i,pos+1,"x.x"});
+			pos=search(line,"11."); if (pos!=-1) return ({other,i,pos+2,"xx."});
+			if (sizeof(line/"1")-1 == sizeof(line)/2) return ({other,i,search(line,'.'),"parity-simple"}); //Can't have any more '1' so any remaining '.'s become a '0's
+
 			if (other=='1') break;
 			other='1'; line=replace(line,({"0","1"}),({"1","0"}));
-			//And redo all these checks with 1 and 0 switched. Saves writing them out twice.
+			//And redo all these checks with 1 and 0 switched. Saves writing them out twice. Note that the array is not mutated, only the local line string.
 		}
 	}
-	return ({0,0,0});
+	return ({0,0,0,0});
 }
 
 //Mutates state. Must not reassign state.
@@ -123,10 +129,10 @@ int try_solve(array(string) state)
 	while (1)
 	{
 		if (validate(state)) return 0;
-		[int val,int row,int col]=try_solve_simple(state);
-		if (val) {move(state,val,row,col); continue;}
-		[val,row,col]=try_solve_simple(flip(state));
-		if (val) {move(state,val,col,row); continue;}
+		[int val,int row,int col,string desc]=try_solve_simple(state);
+		if (val) {move(state,val,row,col,desc); continue;}
+		[val,row,col,desc]=try_solve_simple(flip(state));
+		if (val) {move(state,val,col,row,desc+"-col"); continue;}
 		if (search(state*"",'.')==-1) return 1; //Solved!
 		break; //Probably not solvable.
 	}
