@@ -151,9 +151,9 @@ array(int) try_solve_contrary(array(string) state)
 
 //Mutates state. Must not reassign state.
 //Returns 1 if it could solve the game, 0 if it failed validation somewhere.
-int try_solve(array(string) state)
+int try_solve(array(string) state,int|void hint)
 {
-	while (1)
+	do
 	{
 		if (validate(state)) return 0;
 		[int val,int row,int col,string desc]=try_solve_simple(state);
@@ -164,10 +164,10 @@ int try_solve(array(string) state)
 		[val,row,col,desc]=try_solve_contrary(state);
 		if (val) {move(state,val,row,col,desc); continue;}
 		break; //Probably not solvable.
-	}
+	} while (!hint);
 }
 
-int main()
+int main(int argc,array(string) argv)
 {
 	//test_validate();
 	array(string) state=({ //A fairly easy puzzle
@@ -195,7 +195,8 @@ int main()
 		".........0",
 	});
 	if (validate(state,1)) write("Bad state\n");
-	try_solve(state);
+	if (argc>1 && argv[1]=="--hint") {monitor=1; try_solve(state,1);}
+	else try_solve(state);
 	write(" %s\n",replace(state*"\n",""," "));
 	if (contraried) write("Complex puzzle - not solvable without asserting the contrary\n");
 }
