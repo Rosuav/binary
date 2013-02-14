@@ -132,13 +132,13 @@ array(int) try_solve_simple(array(string) state)
 //If it fails validation at any time, the reverse option MUST be true.
 //Actually, random mightn't be all that useful, as we'll not know when we're done. So do it iteratively and exhaustively.
 //This is much more expensive than the above, and not the same form of logic. We assert the contrary and disprove it, rather than directly proving that this is a valid move.
-constant may_assert_contrary=1;
+int max_assert_contrary=10*10; //Will not attempt assertion of the contrary if there are more than this many dots. Set to sizeof(state*"") to attempt any time (impossibly slow when generating), or to 0 to disable.
 int contraried=0; //Keep track of the number of times the solution required this level of logic
 array(int) try_solve_contrary(array(string) state)
 {
 	//Now THAT is a loop comprehension.
 	int oldmonitor=monitor; monitor=0;
-	if (may_assert_contrary) foreach (state;int row;string line) foreach (line;int col;int val) if (val=='.') for (int newval='0';newval<='1';++newval)
+	if (sizeof(state*""/".")-1<=max_assert_contrary) foreach (state;int row;string line) foreach (line;int col;int val) if (val=='.') for (int newval='0';newval<='1';++newval)
 	{
 		array(string) newstate=state+({ });
 		//newstate[row][col]=newval;
@@ -216,7 +216,8 @@ int main(int argc,array(string) argv)
 	if (argc>1 && argv[1]=="--invent")
 	{
 		write("Starting at %s",ctime(time()));
-		may_assert_contrary=0; //Generate only games that can be solved without asserting the contrary
+		max_assert_contrary=30; //Only assert the contrary when we get down to this few dots - vital to efficiency, assert-contrary is O(N^2) on number of dots left (even on 30 this can take several seconds to invent one puzzle)
+		max_assert_contrary=0; //Generate only games that can be solved without asserting the contrary
 		state=generate(({ //An Othello start!
 			"..........",
 			"..........",
