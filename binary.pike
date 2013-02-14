@@ -167,6 +167,25 @@ int try_solve(array(string) state,int|void hint)
 	} while (!hint);
 }
 
+array(string) generate(array(string)|void template)
+{
+	while (1)
+	{
+		array(string) printed=(template || ({"."*10})*10) + ({ });
+		array(string) state=printed+({ });
+		while (1)
+		{
+			multiset dots=(<>);
+			foreach ((array)(state*"");int pos;int val) if (val=='.') dots[pos]=1;
+			if (!sizeof(dots)) return printed; //Done it!
+			int pos=random(dots),val=random(2)+'0';
+			state[pos/10][pos%10]=val;
+			printed[pos/10][pos%10]=val;
+			try_solve(state);
+			if (validate(state)) break;
+		}
+	}
+}
 int main(int argc,array(string) argv)
 {
 	//test_validate();
@@ -194,6 +213,32 @@ int main(int argc,array(string) argv)
 		"..........",
 		".........0",
 	});
+	if (argc>1 && argv[1]=="--invent")
+	{
+		write("Starting at %s",ctime(time()));
+		may_assert_contrary=0; //Generate only games that can be solved without asserting the contrary
+		state=generate(({ //An Othello start!
+			"..........",
+			"..........",
+			"..........",
+			"..........",
+			"....01....",
+			"....10....",
+			"..........",
+			"..........",
+			"..........",
+			"..........",
+		}));
+		//Okay, we now have a solvable state. Now see how much we can cut out of it.
+		for (int row=0;row<sizeof(state);++row) for (int col=0;col<sizeof(state);++col) if (state[row][col]!='.')
+		{
+			int val=state[row][col];
+			state[row][col]='.';
+			if (!try_solve(state+({ }))) state[row][col]=val; //Can't solve it, put that number back.
+		}
+		write(" %s\n",replace(state*"\n",""," "));
+		return 0;
+	}
 	if (validate(state,1)) write("Bad state\n");
 	if (argc>1 && argv[1]=="--hint") {monitor=1; try_solve(state,1);}
 	else try_solve(state);
