@@ -7,6 +7,8 @@ Rules:
 Corollaries:
 * A pair of cells with the same value is bracketed by the opposite value: .11. --> 0110
 * Two cells with the same value, separated by a gap, must be separated by the other value: 1.1 --> 101
+* Two cells with different values, separated by a two-cell gap, must contain one of each in between: 1..0 --> 1100 or 1010
+  (This may not sound very useful, but it can give information elsewhere via the parity rule.) Not currently coded.
 
 State description:
 array(string) state=
